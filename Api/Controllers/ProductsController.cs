@@ -6,6 +6,7 @@ using Core.Entity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Core.Interface;
+using Core.Specifications;
 
 namespace Api.Controllers
 {
@@ -13,18 +14,25 @@ namespace Api.Controllers
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductRepository _Product;
+        private readonly IGenericRepository<Product> _Product;
+        private readonly IGenericRepository<ProductBrand> _ProductBrand;
+        private readonly IGenericRepository<ProductType> _ProductType;
 
-        public ProductsController(IProductRepository product)
+        public ProductsController(IGenericRepository<Product> product,
+                        IGenericRepository<ProductBrand> productBrand,
+                        IGenericRepository<ProductType> productType)
         {
             _Product = product;
+            _ProductBrand = productBrand;
+            _ProductType = productType;
         }
 
         [HttpGet]
 
         public async Task<ActionResult<IEnumerable<List<Product>>>> getProducts()
         {
-            var products = await _Product.GetProductsAsync();
+            var spec = new ProductsWithBrandsAndTypesSpecs();
+            var products = await _Product.GetSpecificationsAsyn(spec);
             return Ok(products);
         }
 
@@ -32,7 +40,8 @@ namespace Api.Controllers
 
         public async Task<ActionResult<string>> getProduct(int id)
         {
-            var product = await _Product.GetProductByIdAsync(id);
+            var spec = new ProductsWithBrandsAndTypesSpecs();
+            var product = await _Product.GetSpecificationsByIDAsync(spec);
 
             return Ok(product);
         }
@@ -41,28 +50,28 @@ namespace Api.Controllers
 
         public async Task<ActionResult<IReadOnlyList<ProductBrand>>> getBrands()
         {
-            return Ok(await _Product.GetProductBrandsAsync());
+            return Ok(await _ProductBrand.GetAllByAsync());
         }
 
         [HttpGet("brands/{id}")]
 
         public async Task<ActionResult<ProductBrand>> getBrandsByID(int id)
         {
-            return Ok(await _Product.GetProductBrandByIdAsyn(id));
+            return Ok(await _ProductBrand.GetIdByAsync(id));
         }
 
         [HttpGet("types")]
 
         public async Task<ActionResult<IReadOnlyList<ProductType>>> getTypes()
         {
-            return Ok(await _Product.GetProductTypesAsync());
+            return Ok(await _ProductType.GetAllByAsync());
         }
 
         [HttpGet("types/{id}")]
 
         public async Task<ActionResult<ProductType>> getTypesById(int id)
         {
-            return Ok(await _Product.GetProductTypeByIdAsync(id));
+            return Ok(await _ProductType.GetIdByAsync(id));
         }
     }
 }
